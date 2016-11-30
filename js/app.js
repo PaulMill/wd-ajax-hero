@@ -1,7 +1,7 @@
 (function() {
   'use strict';
 
-  const movies = [];
+  let movies = [];
 
   const renderMovies = function() {
     $('#listings').empty();
@@ -55,6 +55,40 @@
       $('.modal-trigger').leanModal();
     }
   };
+// ADD YOUR CODE HERE
+  $('button').on('click', (event) =>{
+    event.preventDefault();
+    movies = [];
+// AJAX Request
+    const $xhr = $.ajax({
+      method: 'GET',
+      url: `http://www.omdbapi.com/?s=${$('#search').val()}`,
+      dataType: 'json'
+    });
 
-  // ADD YOUR CODE HERE
+    $xhr.done((data) => {   //
+      if ($xhr.status !== 200) {
+        return;
+      }
+      if (data.Response === "True") {
+
+// getting data and filling array movies
+        for (let i = 0; i < data.Search.length; i++) {
+          let $mov = (data.Search)[i];
+          let str = JSON.stringify($mov);
+          str = str.replace(/Title/g, 'title');
+          str = str.replace(/Year/g, 'year');
+          str = str.replace(/Poster/g, 'poster');
+          str = str.replace(/Type/g, 'type');
+          str = str.replace(/imdbID/g, 'id');
+          $mov = JSON.parse(str);
+          movies.push($mov);
+        }
+      renderMovies();
+    }
+    else {
+      return Materialize.toast('Not found! Try again.', 4000);
+    }
+    });
+  });
 })();
