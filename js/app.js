@@ -3,7 +3,7 @@
 
   let movies = [];
 
-  const renderMovies = function() {
+  const renderMovies = () => {
     $('#listings').empty();
 
     for (const movie of movies) {
@@ -34,6 +34,8 @@
 
       $plot.addClass('waves-effect waves-light btn modal-trigger');
       $plot.attr('href', `#${movie.id}`);
+      $plot.attr('id', 'buttonPlot');
+      $plot.attr('val', `${movie.id}`);
       $plot.text('Plot Synopsis');
 
       $action.append($plot);
@@ -55,10 +57,11 @@
       $('.modal-trigger').leanModal();
     }
   };
-// ADD YOUR CODE HERE
-  $('button').on('click', (event) =>{
+
+  $('button').on('click', (event) => {
     event.preventDefault();
     movies = [];
+
 // AJAX Request
     const $xhr = $.ajax({
       method: 'GET',
@@ -70,25 +73,50 @@
       if ($xhr.status !== 200) {
         return;
       }
-      if (data.Response === "True") {
-
-// getting data and filling array movies
+      if (data.Response === 'True') {
+            // getting data and filling array movies
         for (let i = 0; i < data.Search.length; i++) {
           let $mov = (data.Search)[i];
+
+          // Replacing from capital letter to lowercase keys
           let str = JSON.stringify($mov);
+
           str = str.replace(/Title/g, 'title');
           str = str.replace(/Year/g, 'year');
           str = str.replace(/Poster/g, 'poster');
           str = str.replace(/Type/g, 'type');
           str = str.replace(/imdbID/g, 'id');
           $mov = JSON.parse(str);
-          movies.push($mov);
+          for (const key in $mov) {
+            if (key === 'id') {
+              // AJAX request for getting plot from API
+
+              const $xhrID = $.ajax({
+                method: 'GET',
+                url: `http://www.omdbapi.com/?i=${$mov[key]}`,
+                dataType: 'json'
+              });
+              $xhrID.done((data) => {   // getting data by id
+                if ($xhrID.status !== 200) {
+                  return;
+                }
+                for (const pl in data) {
+                  // Looking plot key in object and getting it
+
+                  if (pl === 'Plot') {
+                    $mov[pl.toLowerCase()] = `${data[pl]}`;
+                  }
+                  renderMovies(); // Rendering inside of second AJAX response
+                }
+              });
+            }
+          }
+          movies.push($mov); // pushing to global variable movies
         }
-      renderMovies();
-    }
-    else {
-      return Materialize.toast('Not found! Try again.', 4000);
-    }
+      }
+      else {
+        return Materialize.toast('Not found! Try again.', 4000);
+      }
     });
   });
 })();
